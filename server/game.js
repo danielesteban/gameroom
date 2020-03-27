@@ -265,7 +265,7 @@ class Game extends Room {
       this.nextPiece(player);
     });
     clearInterval(this.animationInterval);
-    this.animationInterval = setInterval(this.onAnimationTick.bind(this), 100);
+    this.animationInterval = setInterval(this.onAnimationTick.bind(this), 150);
   }
 }
 

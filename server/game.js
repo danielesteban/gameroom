@@ -17,8 +17,14 @@ class Game extends Room {
       clients,
       dimensions,
       displays,
+      lastAnimationTick,
       players,
     } = this;
+    const now = Date.now();
+    if (now - lastAnimationTick < 150) {
+      return;
+    }
+    this.lastAnimationTick = now;
     if (
       players.reduce((hasEnded, player, display) => {
         if (hasEnded || !player.client) {
@@ -119,11 +125,24 @@ class Game extends Room {
 
   onClose(client) {
     super.onClose(client);
-    const { players } = this;
+    const {
+      animationInterval,
+      clients,
+      players,
+    } = this;
     if (client.player !== undefined) {
       delete players[client.player].client;
       this.reset();
     }
+    if (!clients.length && animationInterval) {
+      clearInterval(animationInterval);
+      delete this.animationInterval;
+    }
+  }
+
+  onClient(client) {
+    super.onClient(client);
+    this.animationInterval = setInterval(this.onAnimationTick.bind(this), 30);
   }
 
   onRequest(client, request) {
@@ -281,8 +300,7 @@ class Game extends Room {
       player.input = {};
       this.nextPiece(player);
     });
-    clearInterval(this.animationInterval);
-    this.animationInterval = setInterval(this.onAnimationTick.bind(this), 150);
+    this.lastAnimationTick = Date.now();
   }
 }
 

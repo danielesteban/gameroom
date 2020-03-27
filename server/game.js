@@ -96,15 +96,15 @@ class Game extends Room {
         return hasEnded;
       }, false)
     ) {
-      this.reset();
       players
-        .filter(({ client }) => (!!client))
         .forEach((player) => {
-          const client = clients[
-            clients.findIndex(({ id }) => (id === player.client))
-          ];
-          delete client.player;
-          delete player.client;
+          if (player.client) {
+            const client = clients[
+              clients.findIndex(({ id }) => (id === player.client))
+            ];
+            delete client.player;
+            delete player.client;
+          }
         });
     }
     this.broadcast({

@@ -13,7 +13,12 @@ class Game extends Room {
   }
 
   onAnimationTick() {
-    const { dimensions, displays, players } = this;
+    const {
+      clients,
+      dimensions,
+      displays,
+      players,
+    } = this;
     if (
       players.reduce((hasEnded, player, display) => {
         if (hasEnded || !player.client) {
@@ -92,6 +97,15 @@ class Game extends Room {
       }, false)
     ) {
       this.reset();
+      players
+        .filter(({ client }) => (!!client))
+        .forEach((player) => {
+          const client = clients[
+            clients.findIndex(({ id }) => (id === player.client))
+          ];
+          delete client.player;
+          delete player.client;
+        });
     }
     this.broadcast({
       type: 'UPDATE',
@@ -112,25 +126,20 @@ class Game extends Room {
     }
   }
 
-  onClient(client) {
-    super.onClient(client);
-    const { clients, players } = this;
-    const [availableSlot] = [...Array(players.length)]
-      .map((v, i) => (i))
-      .filter((slot) => (clients.findIndex(({ player }) => (player === slot)) === -1));
-    if (availableSlot !== undefined) {
-      client.player = availableSlot;
-      players[availableSlot].client = client;
-      this.reset();
-    }
-  }
-
   onRequest(client, request) {
     super.onRequest(client, request);
     const { players } = this;
     switch (request.type) {
       case 'INPUT': {
         if (client.player === undefined) {
+          const [availableSlot] = players
+            .filter(({ client }) => (!client))
+            .map((client, index) => (index));
+          if (availableSlot !== undefined) {
+            client.player = availableSlot;
+            players[availableSlot].client = client.id;
+            this.reset();
+          }
           return;
         }
         let { move, rotate } = request.data;

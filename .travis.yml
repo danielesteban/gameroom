@@ -1,0 +1,16 @@
+language: node_js
+node_js: lts/*
+env:
+  global:
+  - secure: kPxPgsffJNoLo6mcqPbeXAYa75u6h20HbfBXFB2Ausi9W9EQk1+bP68RcI0t+r1YSDiXx65VcZtTseeePfYQfJ9kAK3+oasAiTUNOYgHfZdGtGp9lVIb7ENKNIMqmj32/zeCU3nh6+U4bmEy27J2v4zve4FypKvYl9weummLTkBSWBhMkTG/Is1VQrOLUXZd6GmvR8sUGWGUPHUGRfQw7QG2R/65nseKw5XLVRifRU2s0+m17RZyLn5hPpVcMmZSvho0Gh8tWzw66/iGLc+2EWyEF2ifv1/nTjjiK41zmnct7z+Yo003SyXOugT3ufzACGpEPRzsKBAhznCnxHKQZ7gv+fdr8my26pY8p6HNUZD+ZAdgrpkaMy9ibxc6JD6ClI34OxFhWcwC7Yz+br7Wv3mxoy6s6KUMEd6ijMZ+Qy8IKBQ3++yIYCcQCU3+ATRfkrcn220AviwN0MPSjGZuNkBPL0jtDkqur4XpI+TEaemEsiZKI4Vp+EwkqygjGu0tjxBAXPwNkJhbrJxGipqkZcplSV72f77wBNRjJzJClNIK6iwgEvUd1NLSR64/GlPC1g9a8E8u1OGkZZaSUqAKNHhq9Y24DAqosBLURPFXNZFDraI99grDQlvA6Aj+KTwbZN3kby0GsfTLuZBnsWmn9wBRmZYhPaOVIz4YJmUsiN0=
+services:
+- docker
+script:
+- npm run lint
+- docker build -t danigatunes/gameroom .
+deploy:
+  on:
+    branch: master
+  provider: script
+  script: echo ${DOCKER_PASSWORD} | docker login -u danigatunes --password-stdin && docker push danigatunes/gameroom  
+  skip_cleanup: true

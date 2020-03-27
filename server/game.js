@@ -141,8 +141,11 @@ class Game extends Room {
   }
 
   onClient(client) {
+    const { animationInterval } = this;
     super.onClient(client);
-    this.animationInterval = setInterval(this.onAnimationTick.bind(this), 30);
+    if (!animationInterval) {
+      this.animationInterval = setInterval(this.onAnimationTick.bind(this), 30);
+    }
   }
 
   onRequest(client, request) {

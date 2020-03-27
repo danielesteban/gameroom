@@ -7,7 +7,7 @@ const Game = require('./game');
 
 const room = new Game({
   dimensions: { width: 10, height: 20 },
-  players: 2,
+  players: 4,
 });
 
 const server = express();

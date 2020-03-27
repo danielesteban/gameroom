@@ -15,6 +15,7 @@ class Room extends Scene {
     ceiling.position.set(0, height, 0);
     ceiling.rotation.set(Math.PI * 0.5, 0, 0);
     this.add(ceiling);
+
     this.displays = [];
     [
       [width, 0, length * -0.5],
@@ -28,9 +29,13 @@ class Room extends Scene {
         wall.lookAt(0, height * 0.5, 0);
         this.add(wall);
         if (i === 0) {
-          [-2, 2].forEach((x) => {
+          const players = 4;
+          const w = width - 1;
+          const size = w / players;
+          const offset = (w * -0.5) + (size * 0.5);
+          [...Array(players)].forEach((v, i) => {
             const display = new Display({ width: 2, height: 4, resolution: 5 });
-            display.position.x = x;
+            display.position.x = offset + (size * i);
             this.displays.push(display);
             wall.add(display);
           });

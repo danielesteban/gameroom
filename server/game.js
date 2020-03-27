@@ -132,10 +132,18 @@ class Game extends Room {
     switch (request.type) {
       case 'INPUT': {
         if (client.player === undefined) {
-          const [availableSlot] = players
+          const availableSlots = players
             .filter(({ client }) => (!client))
             .map((client, index) => (index));
+          let availableSlot = availableSlots[0];
+          if (
+            client.lastAssignedSlot !== undefined
+            && ~availableSlots.indexOf(client.lastAssignedSlot)
+          ) {
+            availableSlot = client.lastAssignedSlot;
+          }
           if (availableSlot !== undefined) {
+            client.lastAssignedSlot = availableSlot;
             client.player = availableSlot;
             players[availableSlot].client = client.id;
             this.reset();

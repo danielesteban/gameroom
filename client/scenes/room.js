@@ -30,12 +30,12 @@ class Room extends Scene {
         this.add(wall);
         if (i === 0) {
           const players = 4;
-          const w = width - 1;
-          const size = w / players;
-          const offset = (w * -0.5) + (size * 0.5);
+          const size = (width - 0.7) / players;
           [...Array(players)].forEach((v, i) => {
             const display = new Display({ width: 2, height: 4, resolution: 5 });
-            display.position.x = offset + (size * i);
+            display.position.x = (
+              (size * 0.5) + (size * Math.floor(i / 2))
+            ) * (i % 2 === 1 ? 1 : -1);
             this.displays.push(display);
             wall.add(display);
           });

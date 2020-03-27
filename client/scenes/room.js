@@ -18,13 +18,13 @@ class Room extends Scene {
 
     this.displays = [];
     [
-      [width, 0, length * -0.5],
-      [length, width * 0.5, 0],
-      [width, 0, length * 0.5],
-      [length, width * -0.5, 0],
+      [width, 0, length * -0.5, 1],
+      [length, width * 0.5, 0, 0.4],
+      [width, 0, length * 0.5, 0.3],
+      [length, width * -0.5, 0, 0.4],
     ]
-      .forEach(([width, x, z], i) => {
-        const wall = new Wall({ width, height });
+      .forEach(([width, x, z, light], i) => {
+        const wall = new Wall({ width, height, light });
         wall.position.set(x, height * 0.5, z);
         wall.lookAt(0, height * 0.5, 0);
         this.add(wall);

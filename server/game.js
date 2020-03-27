@@ -112,6 +112,7 @@ class Game extends Room {
             delete player.client;
           }
         });
+      this.gameStartDelay = now + 3000;
     }
     this.broadcast({
       type: 'UPDATE',
@@ -132,7 +133,6 @@ class Game extends Room {
     } = this;
     if (client.player !== undefined) {
       delete players[client.player].client;
-      this.reset();
     }
     if (!clients.length && animationInterval) {
       clearInterval(animationInterval);
@@ -151,6 +151,9 @@ class Game extends Room {
     switch (request.type) {
       case 'INPUT': {
         if (client.player === undefined) {
+          if (Date.now() < this.gameStartDelay) {
+            return;
+          }
           const availableSlots = players
             .filter(({ client }) => (!client))
             .map((client, index) => (index));
@@ -300,7 +303,9 @@ class Game extends Room {
       player.input = {};
       this.nextPiece(player);
     });
-    this.lastAnimationTick = Date.now();
+    const now = Date.now();
+    this.gameStartDelay = now;
+    this.lastAnimationTick = now;
   }
 }
 

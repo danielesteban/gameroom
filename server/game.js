@@ -155,8 +155,12 @@ class Game extends Room {
             return;
           }
           const availableSlots = players
-            .filter(({ client }) => (!client))
-            .map((client, index) => (index));
+            .reduce((available, { client }, slot) => {
+              if (!client) {
+                available.push(slot);
+              }
+              return available;
+            }, []);
           let availableSlot = availableSlots[0];
           if (
             client.lastAssignedSlot !== undefined

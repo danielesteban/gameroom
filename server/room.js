@@ -25,10 +25,8 @@ class Room {
     const { clients, pingInterval } = this;
     client.id = uuid();
     client.send(JSON.stringify({
-      type: 'LOAD',
-      data: {
-        peers: clients.map(({ id }) => (id)),
-      },
+      type: 'INIT',
+      data: clients.map(({ id }) => (id)),
     }), () => {});
     this.broadcast({
       type: 'JOIN',

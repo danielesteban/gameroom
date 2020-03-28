@@ -78,10 +78,10 @@ class Scene extends ThreeScene {
   onEvent({ type, data }) {
     const { peers, server } = this;
     switch (type) {
-      case 'LOAD':
+      case 'INIT':
         peers.init({
           server,
-          peers: data.peers,
+          peers: data,
         });
         break;
       case 'JOIN':

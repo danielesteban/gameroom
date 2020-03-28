@@ -25,83 +25,83 @@ class Game extends Room {
       return;
     }
     this.lastAnimationTick = now;
-    if (
-      players.reduce((hasEnded, player, display) => {
-        if (hasEnded || !player.client) {
-          return hasEnded;
-        }
-        this.drawPiece({
+    const hasEnded = players.reduce((hasEnded, player, display) => {
+      if (!player.client) {
+        return hasEnded;
+      }
+      this.drawPiece({
+        display,
+        ...player,
+        color: 0,
+      });
+      if (player.input.rotate) {
+        this.updatePiece({
           display,
-          ...player,
-          color: 0,
+          player,
+          update: {
+            rotation: (player.rotation + 1) % 4,
+          },
         });
-        if (player.input.rotate) {
-          this.updatePiece({
-            display,
-            player,
-            update: {
-              rotation: (player.rotation + 1) % 4,
-            },
-          });
-          delete player.input.rotate;
-        }
-        if (player.input.move) {
-          this.updatePiece({
-            display,
-            player,
-            update: {
-              position: {
-                ...player.position,
-                x: player.position.x + player.input.move,
-              },
-            },
-          });
-          delete player.input.move;
-        }
-        const canMove = this.updatePiece({
+        delete player.input.rotate;
+      }
+      if (player.input.move) {
+        this.updatePiece({
           display,
           player,
           update: {
             position: {
               ...player.position,
-              y: player.position.y - 1,
+              x: player.position.x + player.input.move,
             },
           },
         });
-        this.drawPiece({
-          display,
-          ...player,
-        });
-        if (!canMove) {
-          if (this.isOutOfBounds(player)) {
-            hasEnded = true;
-          } else {
-            const height = Game.getPiece(player).length;
-            const pixels = displays[display];
-            for (let y = player.position.y + height - 1; y >= player.position.y; y -= 1) {
-              let isWholeLine = true;
-              for (let x = 0; x < dimensions.width; x += 1) {
-                if (!pixels[(dimensions.width * y) + x]) {
-                  isWholeLine = false;
-                  break;
-                }
+        delete player.input.move;
+      }
+      const canMove = this.updatePiece({
+        display,
+        player,
+        update: {
+          position: {
+            ...player.position,
+            y: player.position.y - 1,
+          },
+        },
+      });
+      this.drawPiece({
+        display,
+        ...player,
+      });
+      if (!canMove) {
+        if (this.isOutOfBounds(player)) {
+          hasEnded = true;
+        } else {
+          const height = Game.getPiece(player).length;
+          const pixels = displays[display];
+          for (let y = player.position.y + height - 1; y >= player.position.y; y -= 1) {
+            let isWholeLine = true;
+            for (let x = 0; x < dimensions.width; x += 1) {
+              if (!pixels[(dimensions.width * y) + x]) {
+                isWholeLine = false;
+                break;
               }
-              if (isWholeLine) {
-                for (let j = y; j < dimensions.height; j += 1) {
-                  for (let x = 0; x < dimensions.width; x += 1) {
-                    pixels[(dimensions.width * j) + x] = j < dimensions.height - 1 ? (
-                      pixels[(dimensions.width * (j + 1)) + x]
-                    ) : 0;
-                  }
+            }
+            if (isWholeLine) {
+              for (let j = y; j < dimensions.height; j += 1) {
+                for (let x = 0; x < dimensions.width; x += 1) {
+                  pixels[(dimensions.width * j) + x] = j < dimensions.height - 1 ? (
+                    pixels[(dimensions.width * (j + 1)) + x]
+                  ) : 0;
                 }
               }
             }
-            this.nextPiece(player);
           }
+          this.nextPiece(player);
         }
-        return hasEnded;
-      }, false)
-    ) {
+      }
+      return hasEnded;
+    }, false);
+    if (hasEnded) {
+      this.gameStartDelay = now + 3000;
       players
         .forEach((player) => {
           if (player.client) {
@@ -112,7 +112,6 @@ class Game extends Room {
             delete player.client;
           }
         });
-      this.gameStartDelay = now + 3000;
     }
     this.broadcast({
       type: 'UPDATE',
@@ -141,8 +140,8 @@ class Game extends Room {
   }
 
   onClient(client) {
-    const { animationInterval } = this;
     super.onClient(client);
+    const { animationInterval } = this;
     if (!animationInterval) {
       this.animationInterval = setInterval(this.onAnimationTick.bind(this), 30);
     }
@@ -215,10 +214,11 @@ class Game extends Room {
     Game.getPiece({ piece, rotation }).forEach((rows, y) => {
       y += position.y;
       rows.forEach((pixel, x) => {
-        if (pixel) {
-          x += position.x;
-          displays[display][(dimensions.width * y) + x] = color;
+        if (!pixel) {
+          return;
         }
+        x += position.x;
+        displays[display][(dimensions.width * y) + x] = color;
       });
     });
   }
@@ -234,20 +234,12 @@ class Game extends Room {
     rotation,
   }) {
     const { dimensions } = this;
-    return Game.getPiece({ piece, rotation }).reduce((hit, rows, y) => {
-      if (!hit) {
-        y += position.y;
-        hit = rows.reduce((hit, pixel) => {
-          if (!hit && pixel) {
-            if (y >= dimensions.height) {
-              hit = true;
-            }
-          }
-          return hit;
-        }, false);
-      }
-      return hit;
-    }, false);
+    return ~Game.getPiece({ piece, rotation }).findIndex((rows, y) => {
+      y += position.y;
+      return ~rows.findIndex((pixel) => (
+        pixel && y >= dimensions.height
+      ));
+    });
   }
 
   testPiece({
@@ -257,23 +249,22 @@ class Game extends Room {
     rotation,
   }) {
     const { dimensions, displays } = this;
-    return Game.getPiece({ piece, rotation }).reduce((hit, rows, y) => {
-      if (!hit) {
-        y += position.y;
-        hit = rows.reduce((hit, pixel, x) => {
-          if (!hit && pixel) {
-            x += position.x;
-            if (x < 0 || x >= dimensions.width || y < 0) {
-              hit = true;
-            } else if (y < dimensions.height) {
-              hit = !!displays[display][(dimensions.width * y) + x];
-            }
-          }
-          return hit;
-        }, false);
-      }
-      return hit;
-    }, false);
+    return ~Game.getPiece({ piece, rotation }).findIndex((rows, y) => {
+      y += position.y;
+      return ~rows.findIndex((pixel, x) => {
+        if (!pixel) {
+          return false;
+        }
+        if (y >= dimensions.height) {
+          return false;
+        }
+        x += position.x;
+        if (x < 0 || x >= dimensions.width || y < 0) {
+          return true;
+        }
+        return !!displays[display][(dimensions.width * y) + x];
+      });
+    });
   }
 
   nextPiece(player) {

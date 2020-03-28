@@ -25,10 +25,13 @@ class Game extends Room {
       return;
     }
     this.lastAnimationTick = now;
-    const hasEnded = players.reduce((hasEnded, player, display) => {
+    let hasEnded = false;
+    let hasUpdated = false;
+    players.forEach((player, display) => {
       if (!player.client) {
-        return hasEnded;
+        return;
       }
+      hasUpdated = true;
       this.drawPiece({
         display,
         ...player,
@@ -57,7 +60,7 @@ class Game extends Room {
         });
         delete player.input.move;
       }
-      const canMove = this.updatePiece({
+      const hasMoved = this.updatePiece({
         display,
         player,
         update: {
@@ -71,35 +74,35 @@ class Game extends Room {
         display,
         ...player,
       });
-      if (!canMove) {
-        if (this.isOutOfBounds(player)) {
-          hasEnded = true;
-        } else {
-          const height = Game.getPiece(player).length;
-          const pixels = displays[display];
-          for (let y = player.position.y + height - 1; y >= player.position.y; y -= 1) {
-            let isWholeLine = true;
+      if (hasMoved) {
+        return;
+      }
+      if (this.isOutOfBounds(player)) {
+        hasEnded = true;
+        return;
+      }
+      const height = Game.getPiece(player).length;
+      const pixels = displays[display];
+      for (let y = player.position.y + height - 1; y >= player.position.y; y -= 1) {
+        let isWholeLine = true;
+        for (let x = 0; x < dimensions.width; x += 1) {
+          if (!pixels[(dimensions.width * y) + x]) {
+            isWholeLine = false;
+            break;
+          }
+        }
+        if (isWholeLine) {
+          for (let j = y; j < dimensions.height; j += 1) {
             for (let x = 0; x < dimensions.width; x += 1) {
-              if (!pixels[(dimensions.width * y) + x]) {
-                isWholeLine = false;
-                break;
-              }
-            }
-            if (isWholeLine) {
-              for (let j = y; j < dimensions.height; j += 1) {
-                for (let x = 0; x < dimensions.width; x += 1) {
-                  pixels[(dimensions.width * j) + x] = j < dimensions.height - 1 ? (
-                    pixels[(dimensions.width * (j + 1)) + x]
-                  ) : 0;
-                }
-              }
+              pixels[(dimensions.width * j) + x] = j < dimensions.height - 1 ? (
+                pixels[(dimensions.width * (j + 1)) + x]
+              ) : 0;
             }
           }
-          this.nextPiece(player);
         }
       }
-      return hasEnded;
-    }, false);
+      this.nextPiece(player);
+    });
     if (hasEnded) {
       this.gameStartDelay = now + 3000;
       players
@@ -113,14 +116,16 @@ class Game extends Room {
           }
         });
     }
-    this.broadcast({
-      type: 'UPDATE',
-      data: {
-        displays: displays.map((display) => (
-          display.toString('base64')
-        )),
-      },
-    });
+    if (hasUpdated) {
+      this.broadcast({
+        type: 'UPDATE',
+        data: {
+          displays: displays.map((display) => (
+            display.toString('base64')
+          )),
+        },
+      });
+    }
   }
 
   onClose(client) {
